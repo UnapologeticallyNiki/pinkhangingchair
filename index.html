@@ -541,7 +541,7 @@ function LoginScreen() {
         if (error)
             setError(error.message);
     };
-    return (React.createElement("div", { className: "phc-login-wrap" },
+    return (React.createElement("div", { className: "phc-root phc-login-wrap" },
         React.createElement("form", { className: "phc-login-card", onSubmit: onSubmit },
             React.createElement("div", { className: "phc-login-emblem" }, "\uD83C\uDF39"),
             React.createElement("h1", { className: "phc-login-title" }, "The Pink Hanging Chair"),
