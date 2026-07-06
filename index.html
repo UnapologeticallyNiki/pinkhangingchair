@@ -170,7 +170,7 @@ const { useState, useMemo, useRef, useEffect } = React;
 // ---------- Supabase setup ----------
 const SUPABASE_URL = 'https://pqmsjowwwewczalqqapm.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_SGFAt4u3UQKQSOKqWjCNVg_gnJH3ps_';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const MEDIA_BUCKET = 'phc-media';
 
 // ---------- tiny inline icon set (no external icon package needed) ----------
@@ -393,7 +393,7 @@ function rowToIdea(row) {
 async function uploadMediaFile(file, ideaId) {
     const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
     const path = `${ideaId}/${uid()}-${cleanName}`;
-    const { error } = await supabase.storage.from(MEDIA_BUCKET).upload(path, file);
+    const { error } = await sb.storage.from(MEDIA_BUCKET).upload(path, file);
     if (error)
         throw error;
     return { name: file.name, path };
@@ -404,7 +404,7 @@ async function getSignedUrls(items) {
         if (!item.path)
             return;
         try {
-            const { data, error } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(item.path, 3600);
+            const { data, error } = await sb.storage.from(MEDIA_BUCKET).createSignedUrl(item.path, 3600);
             if (!error && data)
                 map[item.path] = data.signedUrl;
         }
@@ -415,7 +415,7 @@ async function getSignedUrls(items) {
 function removeMediaFile(path) {
     if (!path)
         return;
-    supabase.storage.from(MEDIA_BUCKET).remove([path]).catch(() => { });
+    sb.storage.from(MEDIA_BUCKET).remove([path]).catch(() => { });
 }
 function toCsv(rows) {
     if (!rows.length)
@@ -536,7 +536,7 @@ function LoginScreen() {
         e.preventDefault();
         setError("");
         setBusy(true);
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await sb.auth.signInWithPassword({ email, password });
         setBusy(false);
         if (error)
             setError(error.message);
@@ -568,8 +568,8 @@ function PinkHangingChair() {
     const jsonInputRef = useRef(null);
     const csvInputRef = useRef(null);
     useEffect(() => {
-        supabase.auth.getSession().then(({ data }) => setSession(data.session));
-        const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => setSession(sess));
+        sb.auth.getSession().then(({ data }) => setSession(data.session));
+        const { data: sub } = sb.auth.onAuthStateChange((_event, sess) => setSession(sess));
         return () => sub.subscription.unsubscribe();
     }, []);
     const flashStatus = (msg) => {
@@ -579,8 +579,8 @@ function PinkHangingChair() {
     const loadAll = async () => {
         setDataLoading(true);
         const [ideasRes, listsRes] = await Promise.all([
-            supabase.from("ideas").select("*").order("title", { ascending: true }),
-            supabase.from("phc_lists").select("*").eq("id", 1).single(),
+            sb.from("ideas").select("*").order("title", { ascending: true }),
+            sb.from("phc_lists").select("*").eq("id", 1).single(),
         ]);
         if (!ideasRes.error)
             setIdeas((ideasRes.data || []).map(rowToIdea));
@@ -598,7 +598,7 @@ function PinkHangingChair() {
         const updated = { ...customLists, [field]: [...customLists[field], val] };
         setCustomLists(updated);
         const column = LIST_FIELD_TO_COLUMN[field];
-        await supabase.from("phc_lists").update({ [column]: updated[field] }).eq("id", 1);
+        await sb.from("phc_lists").update({ [column]: updated[field] }).eq("id", 1);
     };
     const filtered = useMemo(() => {
         let list = [...ideas];
@@ -627,7 +627,7 @@ function PinkHangingChair() {
         const isNew = !!idea._new || !ideas.some(i => i.id === idea.id);
         const payload = ideaToRow(idea);
         if (isNew) {
-            const { data, error } = await supabase.from("ideas").insert(payload).select().single();
+            const { data, error } = await sb.from("ideas").insert(payload).select().single();
             if (error) {
                 alert("Couldn't save idea: " + error.message);
                 return;
@@ -635,7 +635,7 @@ function PinkHangingChair() {
             setIdeas((prev) => [...prev, rowToIdea(data)]);
         }
         else {
-            const { data, error } = await supabase.from("ideas").update(payload).eq("id", idea.id).select().single();
+            const { data, error } = await sb.from("ideas").update(payload).eq("id", idea.id).select().single();
             if (error) {
                 alert("Couldn't save idea: " + error.message);
                 return;
@@ -648,7 +648,7 @@ function PinkHangingChair() {
     const deleteIdea = async (id) => {
         if (!confirm("Delete this idea for good?"))
             return;
-        const { error } = await supabase.from("ideas").delete().eq("id", id);
+        const { error } = await sb.from("ideas").delete().eq("id", id);
         if (error) {
             alert("Couldn't delete idea: " + error.message);
             return;
@@ -663,7 +663,7 @@ function PinkHangingChair() {
             return;
         const nextFavorite = !idea.favorite;
         setIdeas((prev) => prev.map(i => i.id === id ? { ...i, favorite: nextFavorite } : i));
-        const { error } = await supabase.from("ideas").update({ favorite: nextFavorite }).eq("id", id);
+        const { error } = await sb.from("ideas").update({ favorite: nextFavorite }).eq("id", id);
         if (error)
             setIdeas((prev) => prev.map(i => i.id === id ? { ...i, favorite: !nextFavorite } : i));
     };
@@ -681,14 +681,14 @@ function PinkHangingChair() {
                 const data = JSON.parse(r.result);
                 if (Array.isArray(data.ideas) && data.ideas.length) {
                     const rows = data.ideas.map(ideaToRow);
-                    const { error } = await supabase.from("ideas").insert(rows);
+                    const { error } = await sb.from("ideas").insert(rows);
                     if (error) {
                         alert("Couldn't restore ideas: " + error.message);
                         return;
                     }
                 }
                 if (data.customLists) {
-                    await supabase.from("phc_lists").update({
+                    await sb.from("phc_lists").update({
                         type_options: data.customLists.type || DEFAULT_CUSTOM_LISTS.type,
                         level_options: data.customLists.level || [],
                         comfort_options: data.customLists.comfort || [],
@@ -724,7 +724,7 @@ function PinkHangingChair() {
                 const imported = rows.map(csvRowToIdea).filter(i => i.title.trim());
                 if (!imported.length)
                     return;
-                const { error } = await supabase.from("ideas").insert(imported.map(ideaToRow));
+                const { error } = await sb.from("ideas").insert(imported.map(ideaToRow));
                 if (error) {
                     alert("Couldn't import CSV: " + error.message);
                     return;
@@ -749,7 +749,7 @@ function PinkHangingChair() {
     return (React.createElement("div", { className: "phc-root" },
         React.createElement("header", { className: "phc-header" },
             React.createElement("div", { className: "phc-thread", "aria-hidden": "true" }),
-            React.createElement("button", { className: "phc-logout-link", onClick: () => supabase.auth.signOut() }, "Sign out"),
+            React.createElement("button", { className: "phc-logout-link", onClick: () => sb.auth.signOut() }, "Sign out"),
             React.createElement("div", { className: "phc-header-inner" },
                 React.createElement("div", { className: "phc-header-emblem", "aria-hidden": "true" }, "\uD83C\uDF39"),
                 React.createElement("div", null,
@@ -1097,8 +1097,6 @@ function EditModal({ idea, customLists, addCustomOption, onCancel, onSave }) {
                     " Save")))));
 }
 ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(PinkHangingChair, null));
-
-
 
 </script>
 </body>
