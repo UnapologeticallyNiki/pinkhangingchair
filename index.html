@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Pink Hanging Chair — Idea Garden</title>
+
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Nunito+Sans:wght@400;600;700&display=swap');
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+
+.phc-root {
+  --bg: #fdf1f4;
+  --card: #fffbfc;
+  --line: #f0c3d4;
+  --line-soft: #f9dfe8;
+  --ink: #47222f;
+  --ink-soft: #8a5566;
+  --rose: #c2436f;
+  --rose-deep: #832349;
+  --leaf: #5f8f6d;
+  --gold: #d4a24c;
+  --draft: #b7a6c9;
+  --progress: #e0a75e;
+  --complete: #5f8f6d;
+  --missing: #d97a7a;
+  font-family: 'Nunito Sans', sans-serif;
+  background: linear-gradient(180deg, var(--bg), #fbeaf0 60%, #fdf3f6);
+  min-height: 100vh;
+  color: var(--ink);
+  padding-bottom: 60px;
+}
+.phc-header { position: relative; padding: 34px 24px 26px; text-align: center; overflow: hidden; }
+.phc-thread {
+  position: absolute; top: 14px; left: 0; right: 0; height: 1px;
+  background: repeating-linear-gradient(90deg, var(--line) 0 8px, transparent 8px 14px);
+}
+.phc-header-inner { display: inline-flex; align-items: center; gap: 14px; }
+.phc-header-emblem {
+  font-size: 30px; background: var(--card); border: 1px solid var(--line);
+  border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 14px rgba(140, 60, 90, 0.12);
+}
+.phc-title { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 600; color: var(--rose-deep); margin: 0; letter-spacing: 0.2px; }
+.phc-subtitle { margin: 2px 0 0; font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: var(--ink-soft); }
+.phc-savenote { margin: 8px 0 0; font-size: 11.5px; color: var(--ink-soft); opacity: 0.85; }
+
+.phc-toolbar { display: flex; gap: 12px; align-items: center; justify-content: space-between; max-width: 1040px; margin: 0 auto 14px; padding: 0 20px; flex-wrap: wrap; }
+.phc-search { display: flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 9px 16px; flex: 1; min-width: 220px; }
+.phc-search input { border: none; outline: none; background: transparent; flex: 1; font-size: 14px; color: var(--ink); font-family: inherit; }
+.phc-search-icon { color: var(--rose); flex-shrink: 0; }
+.phc-actions { display: flex; gap: 8px; }
+
+.phc-btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--rose-deep); font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit; transition: transform .12s ease, background .12s ease; }
+.phc-btn:hover { background: var(--line-soft); }
+.phc-btn:active { transform: scale(0.97); }
+.phc-btn-primary { background: var(--rose); color: #fff; border-color: var(--rose); }
+.phc-btn-primary:hover { background: var(--rose-deep); }
+
+.phc-filters { display: flex; gap: 8px; max-width: 1040px; margin: 0 auto 14px; padding: 0 20px; flex-wrap: wrap; }
+.phc-filter { padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--ink-soft); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.phc-filter.active { background: var(--rose-deep); color: #fff; border-color: var(--rose-deep); }
+
+.phc-databar { display: flex; align-items: center; gap: 8px; max-width: 1040px; margin: 0 auto 22px; padding: 10px 20px; flex-wrap: wrap; }
+.phc-databar-label { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink-soft); font-weight: 700; margin-right: -2px; }
+.phc-databar-sep { width: 1px; height: 18px; background: var(--line); margin: 0 4px; }
+.phc-chip { display: inline-flex; align-items: center; gap: 5px; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line-soft); background: #fff; color: var(--rose-deep); font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.phc-chip:hover { background: var(--line-soft); }
+
+.phc-grid { max-width: 1040px; margin: 0 auto; padding: 0 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; }
+.phc-empty { grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--ink-soft); }
+.phc-empty p { margin: 4px 0; }
+.phc-empty-sub { font-size: 13px; }
+
+.phc-card { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px 16px 14px; box-shadow: 0 6px 16px rgba(150, 70, 100, 0.08); display: flex; flex-direction: column; gap: 8px; }
+.phc-card-peg { position: absolute; top: -7px; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; background: var(--rose); border-radius: 50%; box-shadow: 0 0 0 3px var(--card); }
+.phc-card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.phc-card-emoji { font-size: 22px; line-height: 1; }
+.phc-star { background: none; border: none; cursor: pointer; color: var(--line); padding: 0; }
+.phc-star.on { color: var(--gold); }
+.phc-card-title { font-family: 'Fraunces', serif; font-size: 18px; margin: 0; color: var(--ink); font-weight: 600; }
+.phc-card-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.phc-badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--line-soft); color: var(--rose-deep); }
+.phc-status-draft { background: #eee6f4; color: #6e5486; }
+.phc-status-in-progress { background: #fbeed8; color: #9c6a1f; }
+.phc-status-complete { background: #e2f0e9; color: #3f7960; }
+.phc-status-missing-something { background: #fbe4e4; color: #a34848; }
+.phc-card-topics { display: flex; flex-wrap: wrap; gap: 5px; }
+.phc-tag { font-size: 11px; background: #f6dbe6; color: var(--rose-deep); padding: 3px 9px; border-radius: 999px; }
+.phc-tag-removable { cursor: pointer; display: inline-flex; align-items: center; gap: 3px; }
+.phc-card-actions { display: flex; gap: 6px; margin-top: auto; padding-top: 8px; border-top: 1px dashed var(--line-soft); }
+.phc-card-actions button { flex: 1; display: flex; align-items: center; justify-content: center; padding: 7px 0; border-radius: 10px; border: none; background: transparent; color: var(--rose-deep); cursor: pointer; }
+.phc-card-actions button:hover { background: var(--line-soft); }
+.phc-danger:hover { background: #fbe0e0 !important; color: #a33 !important; }
+
+.phc-overlay { position: fixed; inset: 0; background: rgba(70, 30, 45, 0.35); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
+.phc-modal { background: #fffdfd; border-radius: 18px; max-width: 620px; width: 100%; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(90, 30, 55, 0.25); }
+.phc-modal-head { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; border-bottom: 1px solid var(--line-soft); }
+.phc-modal-head h2 { font-family: 'Fraunces', serif; font-size: 20px; margin: 0; color: var(--rose-deep); }
+.phc-modal-title { display: flex; align-items: center; gap: 10px; }
+.phc-modal-title h2 { font-size: 20px; }
+.phc-icon-btn { background: none; border: none; cursor: pointer; color: var(--ink-soft); padding: 4px; }
+.phc-modal-body { padding: 18px 22px; overflow-y: auto; flex: 1; }
+.phc-modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 22px; border-top: 1px solid var(--line-soft); }
+
+.phc-view-row { margin-bottom: 12px; }
+.phc-view-label { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--ink-soft); font-weight: 700; margin-bottom: 3px; display: flex; align-items: center; gap: 5px; }
+.phc-view-value { font-size: 14.5px; white-space: pre-wrap; line-height: 1.5; }
+.phc-view-heading { font-family: 'Fraunces', serif; color: var(--rose-deep); font-size: 15px; margin: 18px 0 8px; border-bottom: 1px dashed var(--line-soft); padding-bottom: 4px; }
+.phc-private { background: #fbeef2; border-radius: 10px; padding: 10px 12px; }
+.phc-media-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.phc-thumb { width: 76px; height: 76px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
+.phc-thumb-wrap { position: relative; }
+.phc-thumb-x { position: absolute; top: -6px; right: -6px; background: var(--rose-deep); color: #fff; border: none; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.phc-audio-list { display: flex; flex-direction: column; gap: 6px; }
+.phc-audio-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--line-soft); border-radius: 10px; padding: 6px 10px; }
+.phc-audio-name { font-size: 13px; }
+
+.pf-label { font-size: 11.5px; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 700; color: var(--ink-soft); display: block; margin: 10px 0 4px; }
+.pf-input, .pf-textarea, select.pf-input { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; font-size: 14px; font-family: inherit; color: var(--ink); background: #fff; box-sizing: border-box; }
+.pf-textarea { min-height: 64px; resize: vertical; }
+.pf-input:focus, .pf-textarea:focus { outline: 2px solid var(--rose); outline-offset: 1px; }
+.pf-row { display: flex; gap: 12px; }
+.pf-row > div { flex: 1; min-width: 0; }
+.pf-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pf-combo { display: flex; gap: 6px; }
+.pf-addbtn { flex-shrink: 0; background: var(--rose); color: #fff; border: none; border-radius: 10px; width: 38px; cursor: pointer; }
+.pf-addbtn:hover { background: var(--rose-deep); }
+.pf-favorite { display: flex; align-items: center; gap: 6px; margin-top: 14px; font-size: 13.5px; font-weight: 600; color: var(--rose-deep); cursor: pointer; }
+.pf-emoji-pick { width: 130px; }
+.pf-emoji-input { text-align: center; font-size: 18px; }
+.pf-emoji-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.pf-emoji-opt { background: var(--line-soft); border: none; border-radius: 8px; width: 26px; height: 26px; cursor: pointer; font-size: 14px; }
+.pf-emoji-opt:hover { background: var(--line); }
+.pf-file { font-size: 13px; margin: 4px 0 10px; }
+
+.pf-section { border: 1px solid var(--line-soft); border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+.pf-section-head { width: 100%; display: flex; justify-content: space-between; align-items: center; background: var(--line-soft); border: none; padding: 10px 14px; font-family: 'Fraunces', serif; font-size: 14.5px; color: var(--rose-deep); font-weight: 600; cursor: pointer; }
+.pf-section-body { padding: 12px 14px; }
+
+@media (max-width: 520px) {
+  .pf-row { flex-direction: column; }
+  .pf-grid-2 { grid-template-columns: 1fr; }
+}
+
+.phc-login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #fdf1f4, #fbeaf0 60%, #fdf3f6); padding: 20px; }
+.phc-login-card { background: #fffbfc; border: 1px solid #f0c3d4; border-radius: 18px; padding: 32px 28px; width: 100%; max-width: 360px; box-shadow: 0 12px 30px rgba(140, 60, 90, 0.14); text-align: center; }
+.phc-login-emblem { font-size: 34px; margin-bottom: 6px; }
+.phc-login-title { font-family: 'Fraunces', serif; font-size: 24px; color: #832349; margin: 0 0 2px; }
+.phc-login-sub { font-size: 12.5px; letter-spacing: 2px; text-transform: uppercase; color: #8a5566; margin: 0 0 22px; }
+.phc-login-card .pf-input { margin-bottom: 12px; text-align: left; }
+.phc-login-error { color: #a34848; font-size: 13px; margin: -4px 0 12px; }
+.phc-login-card .phc-btn-primary { width: 100%; justify-content: center; }
+.phc-logout-link { position: absolute; top: 14px; right: 18px; background: none; border: none; color: #8a5566; font-size: 12.5px; cursor: pointer; text-decoration: underline; font-family: inherit; }
+.phc-loading { min-height: 100vh; display: flex; align-items: center; justify-content: center; color: #8a5566; font-family: 'Nunito Sans', sans-serif; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+"use strict";
+const { useState, useMemo, useRef, useEffect } = React;
+
+// ---------- Supabase setup ----------
+const SUPABASE_URL = 'https://pqmsjowwwewczalqqapm.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_SGFAt4u3UQKQSOKqWjCNVg_gnJH3ps_';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const MEDIA_BUCKET = 'phc-media';
+
+// ---------- tiny inline icon set (no external icon package needed) ----------
+function Icon({ name, size = 16, fill = "none" }) {
+    const common = { width: size, height: size, viewBox: "0 0 24 24", fill, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" };
+    const paths = {
+        search: React.createElement(React.Fragment, null,
+            React.createElement("circle", { cx: "11", cy: "11", r: "8" }),
+            React.createElement("line", { x1: "21", y1: "21", x2: "16.65", y2: "16.65" })),
+        star: React.createElement("polygon", { points: "12 2 15.09 8.63 22 9.24 16.5 13.97 18.18 20.77 12 17.1 5.82 20.77 7.5 13.97 2 9.24 8.91 8.63 12 2" }),
+        eye: React.createElement(React.Fragment, null,
+            React.createElement("path", { d: "M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" }),
+            React.createElement("circle", { cx: "12", cy: "12", r: "3" })),
+        pencil: React.createElement(React.Fragment, null,
+            React.createElement("path", { d: "M12 20h9" }),
+            React.createElement("path", { d: "M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" })),
+        trash: React.createElement(React.Fragment, null,
+            React.createElement("path", { d: "M3 6h18" }),
+            React.createElement("path", { d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" }),
+            React.createElement("path", { d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" }),
+            React.createElement("line", { x1: "10", y1: "11", x2: "10", y2: "17" }),
+            React.createElement("line", { x1: "14", y1: "11", x2: "14", y2: "17" })),
+        plus: React.createElement(React.Fragment, null,
+            React.createElement("line", { x1: "12", y1: "5", x2: "12", y2: "19" }),
+            React.createElement("line", { x1: "5", y1: "12", x2: "19", y2: "12" })),
+        download: React.createElement(React.Fragment, null,
+            React.createElement("path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" }),
+            React.createElement("polyline", { points: "7 10 12 15 17 10" }),
+            React.createElement("line", { x1: "12", y1: "15", x2: "12", y2: "3" })),
+        upload: React.createElement(React.Fragment, null,
+            React.createElement("path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" }),
+            React.createElement("polyline", { points: "17 8 12 3 7 8" }),
+            React.createElement("line", { x1: "12", y1: "3", x2: "12", y2: "15" })),
+        x: React.createElement(React.Fragment, null,
+            React.createElement("line", { x1: "18", y1: "6", x2: "6", y2: "18" }),
+            React.createElement("line", { x1: "6", y1: "6", x2: "18", y2: "18" })),
+        file: React.createElement(React.Fragment, null,
+            React.createElement("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
+            React.createElement("polyline", { points: "14 2 14 8 20 8" })),
+        image: React.createElement(React.Fragment, null,
+            React.createElement("rect", { x: "3", y: "3", width: "18", height: "18", rx: "2" }),
+            React.createElement("circle", { cx: "8.5", cy: "8.5", r: "1.5" }),
+            React.createElement("path", { d: "M21 15l-5-5L5 21" })),
+        music: React.createElement(React.Fragment, null,
+            React.createElement("path", { d: "M9 18V5l12-2v13" }),
+            React.createElement("circle", { cx: "6", cy: "18", r: "3" }),
+            React.createElement("circle", { cx: "18", cy: "16", r: "3" })),
+        link: React.createElement(React.Fragment, null,
+            React.createElement("path", { d: "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" }),
+            React.createElement("path", { d: "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" })),
+        lock: React.createElement(React.Fragment, null,
+            React.createElement("rect", { x: "3", y: "11", width: "18", height: "11", rx: "2" }),
+            React.createElement("path", { d: "M7 11V7a5 5 0 0 1 10 0v4" })),
+        unlock: React.createElement(React.Fragment, null,
+            React.createElement("rect", { x: "3", y: "11", width: "18", height: "11", rx: "2" }),
+            React.createElement("path", { d: "M7 11V7a5 5 0 0 1 9.9-1" })),
+        chevronDown: React.createElement("polyline", { points: "6 9 12 15 18 9" }),
+        chevronUp: React.createElement("polyline", { points: "18 15 12 9 6 15" }),
+        save: React.createElement(React.Fragment, null,
+            React.createElement("path", { d: "M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" }),
+            React.createElement("polyline", { points: "17 21 17 13 7 13 7 21" }),
+            React.createElement("polyline", { points: "7 3 7 8 15 8" })),
+        sortDown: React.createElement(React.Fragment, null,
+            React.createElement("line", { x1: "12", y1: "5", x2: "12", y2: "19" }),
+            React.createElement("polyline", { points: "19 12 12 19 5 12" })),
+        sortUp: React.createElement(React.Fragment, null,
+            React.createElement("line", { x1: "12", y1: "19", x2: "12", y2: "5" }),
+            React.createElement("polyline", { points: "19 12 12 5 5 12" })),
+    };
+    return React.createElement("svg", { ...common }, paths[name]);
+}
+// ---------- helpers ----------
+const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+const nowISO = () => new Date().toISOString();
+const STATUS_OPTIONS = [
+    { value: "draft", label: "Draft" },
+    { value: "in-progress", label: "In Progress" },
+    { value: "complete", label: "Complete" },
+    { value: "missing-something", label: "Missing Something" },
+];
+const FILTER_BOXES = [
+    { value: "all", label: "All" },
+    { value: "favorite", label: "Favorite" },
+    { value: "in-progress", label: "In Progress" },
+    { value: "complete", label: "Complete" },
+    { value: "missing-something", label: "Missing Something" },
+];
+const EMOJI_PRESET = ["✨", "🌙", "🪶", "🕊️", "🌸", "🧵", "🫖", "📖", "🕯️", "🧶", "🌿", "💌", "🎐", "🐚", "🪺"];
+function blankIdea() {
+    return {
+        id: uid(),
+        _new: true,
+        emoji: "",
+        title: "",
+        type: "",
+        kind: "",
+        level: "",
+        status: "draft",
+        comfort: "",
+        need: "",
+        favorite: false,
+        who: "", what: "", where: "", when: "", how: "", why: "",
+        feelings: "",
+        quotes: "",
+        wisdom: "",
+        metaphorical: "",
+        solutions: "",
+        topics: [],
+        relationships: "",
+        related: "",
+        edition: "",
+        images: [],
+        audio: [],
+        noteLinks: [],
+        references: "",
+        suggestions: "",
+        planningNotes: "",
+        createdAt: nowISO(),
+        updatedAt: nowISO(),
+    };
+}
+const FLAT_FIELDS = [
+    "emoji", "title", "type", "kind", "level", "status", "comfort", "need", "favorite",
+    "who", "what", "where", "when", "how", "why", "feelings", "quotes", "wisdom",
+    "metaphorical", "solutions", "relationships", "related", "edition",
+    "references", "suggestions", "planningNotes", "createdAt", "updatedAt",
+];
+function ideaToCsvRow(idea) {
+    const row = {};
+    FLAT_FIELDS.forEach((f) => { row[f] = idea[f] !== undefined && idea[f] !== null ? idea[f] : ""; });
+    row.topics = (idea.topics || []).join("; ");
+    row.noteLinks = (idea.noteLinks || []).map(n => `${n.label}|${n.url}`).join("; ");
+    return row;
+}
+function csvRowToIdea(row) {
+    const idea = blankIdea();
+    FLAT_FIELDS.forEach((f) => {
+        if (row[f] !== undefined)
+            idea[f] = f === "favorite" ? String(row[f]).toLowerCase() === "true" : row[f];
+    });
+    idea.topics = (row.topics || "").split(";").map(s => s.trim()).filter(Boolean);
+    idea.noteLinks = (row.noteLinks || "").split(";").map(s => s.trim()).filter(Boolean).map(pair => {
+        const [label, url] = pair.split("|");
+        return { label: (label || "link").trim(), url: (url || "").trim() };
+    });
+    idea.id = uid();
+    idea._new = true;
+    idea.images = [];
+    idea.audio = [];
+    return idea;
+}
+// ---------- Supabase row <-> app-shape idea mapping ----------
+// The app uses camelCase (noteLinks, references, planningNotes); the DB uses
+// snake_case for the few fields that needed it (note_links, references_text,
+// planning_notes) since "references" alone can collide with SQL reserved words.
+function ideaToRow(idea) {
+    return {
+        emoji: idea.emoji || "",
+        title: idea.title || "",
+        type: idea.type || "",
+        kind: idea.kind || "",
+        level: idea.level || "",
+        status: idea.status || "draft",
+        comfort: idea.comfort || "",
+        need: idea.need || "",
+        favorite: !!idea.favorite,
+        who: idea.who || "", what: idea.what || "", where: idea.where || "",
+        when: idea.when || "", how: idea.how || "", why: idea.why || "",
+        feelings: idea.feelings || "",
+        quotes: idea.quotes || "",
+        wisdom: idea.wisdom || "",
+        metaphorical: idea.metaphorical || "",
+        solutions: idea.solutions || "",
+        topics: idea.topics || [],
+        relationships: idea.relationships || "",
+        related: idea.related || "",
+        edition: idea.edition || "",
+        images: idea.images || [],
+        audio: idea.audio || [],
+        note_links: idea.noteLinks || [],
+        references_text: idea.references || "",
+        suggestions: idea.suggestions || "",
+        planning_notes: idea.planningNotes || "",
+    };
+}
+function rowToIdea(row) {
+    return {
+        id: row.id,
+        emoji: row.emoji || "",
+        title: row.title || "",
+        type: row.type || "",
+        kind: row.kind || "",
+        level: row.level || "",
+        status: row.status || "draft",
+        comfort: row.comfort || "",
+        need: row.need || "",
+        favorite: !!row.favorite,
+        who: row.who || "", what: row.what || "", where: row.where || "",
+        when: row.when || "", how: row.how || "", why: row.why || "",
+        feelings: row.feelings || "",
+        quotes: row.quotes || "",
+        wisdom: row.wisdom || "",
+        metaphorical: row.metaphorical || "",
+        solutions: row.solutions || "",
+        topics: row.topics || [],
+        relationships: row.relationships || "",
+        related: row.related || "",
+        edition: row.edition || "",
+        images: row.images || [],
+        audio: row.audio || [],
+        noteLinks: row.note_links || [],
+        references: row.references_text || "",
+        suggestions: row.suggestions || "",
+        planningNotes: row.planning_notes || "",
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+    };
+}
+// ---------- media storage (Supabase Storage, private bucket) ----------
+async function uploadMediaFile(file, ideaId) {
+    const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `${ideaId}/${uid()}-${cleanName}`;
+    const { error } = await supabase.storage.from(MEDIA_BUCKET).upload(path, file);
+    if (error)
+        throw error;
+    return { name: file.name, path };
+}
+async function getSignedUrls(items) {
+    const map = {};
+    await Promise.all((items || []).map(async (item) => {
+        if (!item.path)
+            return;
+        try {
+            const { data, error } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(item.path, 3600);
+            if (!error && data)
+                map[item.path] = data.signedUrl;
+        }
+        catch (e) { /* ignore individual signing failures */ }
+    }));
+    return map;
+}
+function removeMediaFile(path) {
+    if (!path)
+        return;
+    supabase.storage.from(MEDIA_BUCKET).remove([path]).catch(() => { });
+}
+function toCsv(rows) {
+    if (!rows.length)
+        return "";
+    const headers = Object.keys(rows[0]);
+    const esc = (v) => {
+        const s = String(v !== undefined && v !== null ? v : "");
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const lines = [headers.join(",")];
+    rows.forEach(r => lines.push(headers.map(h => esc(r[h])).join(",")));
+    return lines.join("\n");
+}
+function parseCsv(text) {
+    const lines = text.split(/\r?\n/).filter(l => l.length > 0);
+    if (!lines.length)
+        return [];
+    const parseLine = (line) => {
+        const out = [];
+        let cur = "";
+        let inQ = false;
+        for (let i = 0; i < line.length; i++) {
+            const c = line[i];
+            if (inQ) {
+                if (c === '"' && line[i + 1] === '"') {
+                    cur += '"';
+                    i++;
+                }
+                else if (c === '"') {
+                    inQ = false;
+                }
+                else
+                    cur += c;
+            }
+            else {
+                if (c === '"')
+                    inQ = true;
+                else if (c === ',') {
+                    out.push(cur);
+                    cur = "";
+                }
+                else
+                    cur += c;
+            }
+        }
+        out.push(cur);
+        return out;
+    };
+    const headers = parseLine(lines[0]);
+    return lines.slice(1).map(line => {
+        const vals = parseLine(line);
+        const row = {};
+        headers.forEach((h, i) => { row[h] = vals[i] !== undefined ? vals[i] : ""; });
+        return row;
+    });
+}
+function download(filename, content, mime) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+function fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+    });
+}
+// ---------- combo field (customizable list) ----------
+function ComboField({ label, value, onChange, options, onAddOption }) {
+    const [text, setText] = useState(value || "");
+    const listId = "list-" + label.replace(/\s+/g, "-");
+    return (React.createElement("div", null,
+        React.createElement("label", { className: "pf-label" }, label),
+        React.createElement("div", { className: "pf-combo" },
+            React.createElement("input", { className: "pf-input", list: listId, value: text, placeholder: `Add or choose ${label.toLowerCase()}...`, onChange: (e) => { setText(e.target.value); onChange(e.target.value); } }),
+            React.createElement("datalist", { id: listId }, options.map((o) => React.createElement("option", { key: o, value: o }))),
+            React.createElement("button", { type: "button", className: "pf-addbtn", title: `Save "${text}" to ${label} list`, onClick: () => text.trim() && onAddOption(text.trim()) },
+                React.createElement(Icon, { name: "plus", size: 14 })))));
+}
+function Section({ title, children, defaultOpen = true }) {
+    const [open, setOpen] = useState(defaultOpen);
+    return (React.createElement("div", { className: "pf-section" },
+        React.createElement("button", { type: "button", className: "pf-section-head", onClick: () => setOpen(!open) },
+            React.createElement("span", null, title),
+            React.createElement(Icon, { name: open ? "chevronUp" : "chevronDown", size: 16 })),
+        open && React.createElement("div", { className: "pf-section-body" }, children)));
+}
+// ---------- default custom lists shape ----------
+const DEFAULT_CUSTOM_LISTS = {
+    type: ["Chat", "Lesson", "Advice", "Guidance", "Joke", "Story", "Memory"],
+    level: [], comfort: [], need: [],
+};
+function listsRowToCustomLists(row) {
+    if (!row)
+        return { ...DEFAULT_CUSTOM_LISTS };
+    return {
+        type: row.type_options || DEFAULT_CUSTOM_LISTS.type,
+        level: row.level_options || [],
+        comfort: row.comfort_options || [],
+        need: row.need_options || [],
+    };
+}
+const LIST_FIELD_TO_COLUMN = { type: "type_options", level: "level_options", comfort: "comfort_options", need: "need_options" };
+
+// ---------- login screen ----------
+function LoginScreen() {
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const [busy, setBusy] = useState(false);
+    const onSubmit = async (e) => {
+        e.preventDefault();
+        setError("");
+        setBusy(true);
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        setBusy(false);
+        if (error)
+            setError(error.message);
+    };
+    return (React.createElement("div", { className: "phc-login-wrap" },
+        React.createElement("form", { className: "phc-login-card", onSubmit: onSubmit },
+            React.createElement("div", { className: "phc-login-emblem" }, "\uD83C\uDF39"),
+            React.createElement("h1", { className: "phc-login-title" }, "The Pink Hanging Chair"),
+            React.createElement("p", { className: "phc-login-sub" }, "Idea Garden"),
+            React.createElement("input", { className: "pf-input", type: "email", placeholder: "Email", value: email, onChange: (e) => setEmail(e.target.value), autoComplete: "username", required: true }),
+            React.createElement("input", { className: "pf-input", type: "password", placeholder: "Password", value: password, onChange: (e) => setPassword(e.target.value), autoComplete: "current-password", required: true }),
+            error && React.createElement("div", { className: "phc-login-error" }, error),
+            React.createElement("button", { className: "phc-btn phc-btn-primary", type: "submit", disabled: busy }, busy ? "Signing in..." : "Sign in"))));
+}
+
+// ---------- main app ----------
+function PinkHangingChair() {
+    const [session, setSession] = useState(undefined); // undefined = still checking, null = signed out
+    const [ideas, setIdeas] = useState([]);
+    const [customLists, setCustomLists] = useState(DEFAULT_CUSTOM_LISTS);
+    const [dataLoading, setDataLoading] = useState(true);
+    const [saveStatus, setSaveStatus] = useState("");
+    const [filter, setFilter] = useState("all");
+    const [search, setSearch] = useState("");
+    const [sortAsc, setSortAsc] = useState(true);
+    const [viewingId, setViewingId] = useState(null);
+    const [editingIdea, setEditingIdea] = useState(null);
+    const [showPrivate, setShowPrivate] = useState(false);
+    const jsonInputRef = useRef(null);
+    const csvInputRef = useRef(null);
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data }) => setSession(data.session));
+        const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => setSession(sess));
+        return () => sub.subscription.unsubscribe();
+    }, []);
+    const flashStatus = (msg) => {
+        setSaveStatus(msg);
+        setTimeout(() => setSaveStatus(""), 1800);
+    };
+    const loadAll = async () => {
+        setDataLoading(true);
+        const [ideasRes, listsRes] = await Promise.all([
+            supabase.from("ideas").select("*").order("title", { ascending: true }),
+            supabase.from("phc_lists").select("*").eq("id", 1).single(),
+        ]);
+        if (!ideasRes.error)
+            setIdeas((ideasRes.data || []).map(rowToIdea));
+        if (!listsRes.error)
+            setCustomLists(listsRowToCustomLists(listsRes.data));
+        setDataLoading(false);
+    };
+    useEffect(() => {
+        if (session)
+            loadAll();
+    }, [session]);
+    const addCustomOption = async (field, val) => {
+        if (customLists[field].includes(val))
+            return;
+        const updated = { ...customLists, [field]: [...customLists[field], val] };
+        setCustomLists(updated);
+        const column = LIST_FIELD_TO_COLUMN[field];
+        await supabase.from("phc_lists").update({ [column]: updated[field] }).eq("id", 1);
+    };
+    const filtered = useMemo(() => {
+        let list = [...ideas];
+        if (filter === "favorite")
+            list = list.filter(i => i.favorite);
+        else if (filter !== "all")
+            list = list.filter(i => i.status === filter);
+        if (search.trim()) {
+            const q = search.toLowerCase();
+            list = list.filter(i => {
+                const hay = [
+                    i.title, i.type, i.kind, i.level, i.comfort, i.need, i.who, i.what,
+                    i.where, i.when, i.how, i.why, i.feelings, i.quotes, i.wisdom,
+                    i.metaphorical, i.solutions, i.relationships, i.related, i.edition,
+                    i.references, i.suggestions, (i.topics || []).join(" "),
+                ].join(" ").toLowerCase();
+                return hay.includes(q);
+            });
+        }
+        list.sort((a, b) => sortAsc
+            ? a.title.localeCompare(b.title)
+            : b.title.localeCompare(a.title));
+        return list;
+    }, [ideas, filter, search, sortAsc]);
+    const saveIdea = async (idea) => {
+        const isNew = !!idea._new || !ideas.some(i => i.id === idea.id);
+        const payload = ideaToRow(idea);
+        if (isNew) {
+            const { data, error } = await supabase.from("ideas").insert(payload).select().single();
+            if (error) {
+                alert("Couldn't save idea: " + error.message);
+                return;
+            }
+            setIdeas((prev) => [...prev, rowToIdea(data)]);
+        }
+        else {
+            const { data, error } = await supabase.from("ideas").update(payload).eq("id", idea.id).select().single();
+            if (error) {
+                alert("Couldn't save idea: " + error.message);
+                return;
+            }
+            setIdeas((prev) => prev.map(i => i.id === idea.id ? rowToIdea(data) : i));
+        }
+        flashStatus("Saved to your garden");
+        setEditingIdea(null);
+    };
+    const deleteIdea = async (id) => {
+        if (!confirm("Delete this idea for good?"))
+            return;
+        const { error } = await supabase.from("ideas").delete().eq("id", id);
+        if (error) {
+            alert("Couldn't delete idea: " + error.message);
+            return;
+        }
+        setIdeas((prev) => prev.filter(i => i.id !== id));
+        if (viewingId === id)
+            setViewingId(null);
+    };
+    const toggleFavorite = async (id) => {
+        const idea = ideas.find(i => i.id === id);
+        if (!idea)
+            return;
+        const nextFavorite = !idea.favorite;
+        setIdeas((prev) => prev.map(i => i.id === id ? { ...i, favorite: nextFavorite } : i));
+        const { error } = await supabase.from("ideas").update({ favorite: nextFavorite }).eq("id", id);
+        if (error)
+            setIdeas((prev) => prev.map(i => i.id === id ? { ...i, favorite: !nextFavorite } : i));
+    };
+    // JSON backup / restore
+    const exportJson = () => {
+        download("pink-hanging-chair-backup.json", JSON.stringify({ ideas, customLists }, null, 2), "application/json");
+    };
+    const importJson = (e) => {
+        const file = e.target.files[0];
+        if (!file)
+            return;
+        const r = new FileReader();
+        r.onload = async () => {
+            try {
+                const data = JSON.parse(r.result);
+                if (Array.isArray(data.ideas) && data.ideas.length) {
+                    const rows = data.ideas.map(ideaToRow);
+                    const { error } = await supabase.from("ideas").insert(rows);
+                    if (error) {
+                        alert("Couldn't restore ideas: " + error.message);
+                        return;
+                    }
+                }
+                if (data.customLists) {
+                    await supabase.from("phc_lists").update({
+                        type_options: data.customLists.type || DEFAULT_CUSTOM_LISTS.type,
+                        level_options: data.customLists.level || [],
+                        comfort_options: data.customLists.comfort || [],
+                        need_options: data.customLists.need || [],
+                    }).eq("id", 1);
+                }
+                await loadAll();
+                flashStatus("Restored from backup");
+            }
+            catch {
+                alert("That JSON file couldn't be read.");
+            }
+        };
+        r.readAsText(file);
+        e.target.value = "";
+    };
+    // CSV export / import / template
+    const exportCsv = () => {
+        download("pink-hanging-chair-ideas.csv", toCsv(ideas.map(ideaToCsvRow)), "text/csv");
+    };
+    const downloadTemplate = () => {
+        const blank = ideaToCsvRow(blankIdea());
+        download("pink-hanging-chair-template.csv", toCsv([blank]), "text/csv");
+    };
+    const importCsv = (e) => {
+        const file = e.target.files[0];
+        if (!file)
+            return;
+        const r = new FileReader();
+        r.onload = async () => {
+            try {
+                const rows = parseCsv(r.result);
+                const imported = rows.map(csvRowToIdea).filter(i => i.title.trim());
+                if (!imported.length)
+                    return;
+                const { error } = await supabase.from("ideas").insert(imported.map(ideaToRow));
+                if (error) {
+                    alert("Couldn't import CSV: " + error.message);
+                    return;
+                }
+                await loadAll();
+                flashStatus(`Imported ${imported.length} idea(s)`);
+            }
+            catch {
+                alert("That CSV file couldn't be read.");
+            }
+        };
+        r.readAsText(file);
+        e.target.value = "";
+    };
+    const viewingIdea = ideas.find(i => i.id === viewingId);
+    if (session === undefined) {
+        return React.createElement("div", { className: "phc-loading" }, "Loading...");
+    }
+    if (!session) {
+        return React.createElement(LoginScreen, null);
+    }
+    return (React.createElement("div", { className: "phc-root" },
+        React.createElement("header", { className: "phc-header" },
+            React.createElement("div", { className: "phc-thread", "aria-hidden": "true" }),
+            React.createElement("button", { className: "phc-logout-link", onClick: () => supabase.auth.signOut() }, "Sign out"),
+            React.createElement("div", { className: "phc-header-inner" },
+                React.createElement("div", { className: "phc-header-emblem", "aria-hidden": "true" }, "\uD83C\uDF39"),
+                React.createElement("div", null,
+                    React.createElement("h1", { className: "phc-title" }, "The Pink Hanging Chair"),
+                    React.createElement("p", { className: "phc-subtitle" }, "Idea Garden"),
+                    React.createElement("p", { className: "phc-savenote" },
+                        saveStatus || (dataLoading ? "Loading your garden..." : "Synced to your account"),
+                        " \u00B7 use JSON Export as a backup anytime")))),
+        React.createElement("div", { className: "phc-toolbar" },
+            React.createElement("div", { className: "phc-search" },
+                React.createElement(Icon, { name: "search", size: 16 }),
+                React.createElement("input", { value: search, onChange: (e) => setSearch(e.target.value), placeholder: "Search every bed in the garden..." })),
+            React.createElement("div", { className: "phc-actions" },
+                React.createElement("button", { className: "phc-btn", onClick: () => setSortAsc(!sortAsc), title: "Sort A\u2013Z / Z\u2013A" },
+                    React.createElement(Icon, { name: sortAsc ? "sortDown" : "sortUp", size: 16 }),
+                    " Sort"),
+                React.createElement("button", { className: "phc-btn phc-btn-primary", onClick: () => setEditingIdea(blankIdea()) },
+                    React.createElement(Icon, { name: "plus", size: 16 }),
+                    " Plant Idea"))),
+        React.createElement("div", { className: "phc-filters" }, FILTER_BOXES.map((f) => (React.createElement("button", { key: f.value, className: "phc-filter" + (filter === f.value ? " active" : ""), onClick: () => setFilter(f.value) }, f.label)))),
+        React.createElement("div", { className: "phc-databar" },
+            React.createElement("span", { className: "phc-databar-label" }, "Backup"),
+            React.createElement("button", { className: "phc-chip", onClick: exportJson },
+                React.createElement(Icon, { name: "file", size: 14 }),
+                " Export JSON"),
+            React.createElement("button", { className: "phc-chip", onClick: () => jsonInputRef.current.click() },
+                React.createElement(Icon, { name: "upload", size: 14 }),
+                " Restore JSON"),
+            React.createElement("input", { ref: jsonInputRef, type: "file", accept: "application/json", hidden: true, onChange: importJson }),
+            React.createElement("span", { className: "phc-databar-sep" }),
+            React.createElement("span", { className: "phc-databar-label" }, "CSV"),
+            React.createElement("button", { className: "phc-chip", onClick: exportCsv },
+                React.createElement(Icon, { name: "file", size: 14 }),
+                " Export CSV"),
+            React.createElement("button", { className: "phc-chip", onClick: () => csvInputRef.current.click() },
+                React.createElement(Icon, { name: "upload", size: 14 }),
+                " Import CSV"),
+            React.createElement("input", { ref: csvInputRef, type: "file", accept: ".csv", hidden: true, onChange: importCsv }),
+            React.createElement("button", { className: "phc-chip", onClick: downloadTemplate },
+                React.createElement(Icon, { name: "download", size: 14 }),
+                " Blank Template")),
+        React.createElement("main", { className: "phc-grid" },
+            dataLoading && (React.createElement("div", { className: "phc-empty" },
+                React.createElement("p", null, "Loading your garden..."))),
+            !dataLoading && filtered.length === 0 && (React.createElement("div", { className: "phc-empty" },
+                React.createElement("p", null, "Nothing has bloomed here yet."),
+                React.createElement("p", { className: "phc-empty-sub" }, "Plant a new idea and watch it take root."))),
+            filtered.map((idea) => (React.createElement("article", { key: idea.id, className: "phc-card" },
+                React.createElement("div", { className: "phc-card-peg", "aria-hidden": "true" }),
+                React.createElement("div", { className: "phc-card-top" },
+                    React.createElement("span", { className: "phc-card-emoji" }, idea.emoji || "•"),
+                    React.createElement("button", { className: "phc-star" + (idea.favorite ? " on" : ""), onClick: () => toggleFavorite(idea.id), title: "Favorite" },
+                        React.createElement(Icon, { name: "star", size: 18, fill: idea.favorite ? "currentColor" : "none" }))),
+                React.createElement("h3", { className: "phc-card-title" }, idea.title || "Untitled idea"),
+                React.createElement("div", { className: "phc-card-badges" },
+                    idea.type && React.createElement("span", { className: "phc-badge" }, idea.type),
+                    React.createElement("span", { className: "phc-badge phc-status phc-status-" + idea.status }, (STATUS_OPTIONS.find(s => s.value === idea.status) || {}).label)),
+                (idea.topics && idea.topics.length > 0) && (React.createElement("div", { className: "phc-card-topics" }, idea.topics.slice(0, 4).map(t => React.createElement("span", { key: t, className: "phc-tag" }, t)))),
+                React.createElement("div", { className: "phc-card-actions" },
+                    React.createElement("button", { onClick: () => setViewingId(idea.id), title: "View" },
+                        React.createElement(Icon, { name: "eye", size: 16 })),
+                    React.createElement("button", { onClick: () => setEditingIdea(idea), title: "Edit" },
+                        React.createElement(Icon, { name: "pencil", size: 16 })),
+                    React.createElement("button", { onClick: () => deleteIdea(idea.id), title: "Delete", className: "phc-danger" },
+                        React.createElement(Icon, { name: "trash", size: 16 }))))))),
+        viewingIdea && (React.createElement(ViewModal, { idea: viewingIdea, onClose: () => { setViewingId(null); setShowPrivate(false); }, onEdit: () => { setEditingIdea(viewingIdea); setViewingId(null); }, showPrivate: showPrivate, setShowPrivate: setShowPrivate })),
+        editingIdea && (React.createElement(EditModal, { idea: editingIdea, customLists: customLists, addCustomOption: addCustomOption, onCancel: () => setEditingIdea(null), onSave: saveIdea }))));
+}
+function ViewModal({ idea, onClose, onEdit, showPrivate, setShowPrivate }) {
+    const [mediaUrls, setMediaUrls] = useState({});
+    useEffect(() => {
+        let cancelled = false;
+        getSignedUrls([...(idea.images || []), ...(idea.audio || [])]).then((map) => {
+            if (!cancelled)
+                setMediaUrls(map);
+        });
+        return () => { cancelled = true; };
+    }, [idea]);
+    const Row = ({ label, value }) => !value ? null : (React.createElement("div", { className: "phc-view-row" },
+        React.createElement("div", { className: "phc-view-label" }, label),
+        React.createElement("div", { className: "phc-view-value" }, value)));
+    return (React.createElement("div", { className: "phc-overlay", onClick: onClose },
+        React.createElement("div", { className: "phc-modal", onClick: (e) => e.stopPropagation() },
+            React.createElement("div", { className: "phc-modal-head" },
+                React.createElement("div", { className: "phc-modal-title" },
+                    React.createElement("span", { className: "phc-card-emoji" }, idea.emoji || "•"),
+                    React.createElement("h2", null, idea.title || "Untitled idea")),
+                React.createElement("button", { className: "phc-icon-btn", onClick: onClose },
+                    React.createElement(Icon, { name: "x", size: 18 }))),
+            React.createElement("div", { className: "phc-modal-body" },
+                React.createElement("div", { className: "phc-view-row" },
+                    React.createElement("div", { className: "phc-view-label" }, "Status"),
+                    React.createElement("div", { className: "phc-view-value" }, (STATUS_OPTIONS.find(s => s.value === idea.status) || {}).label)),
+                React.createElement(Row, { label: "Type", value: idea.type }),
+                React.createElement(Row, { label: "Kind", value: idea.kind }),
+                React.createElement(Row, { label: "Level", value: idea.level }),
+                React.createElement(Row, { label: "Comfort level", value: idea.comfort }),
+                React.createElement(Row, { label: "Need", value: idea.need }),
+                React.createElement(Row, { label: "Edition", value: idea.edition }),
+                (idea.who || idea.what || idea.where || idea.when || idea.how || idea.why) && (React.createElement(React.Fragment, null,
+                    React.createElement("h3", { className: "phc-view-heading" }, "Who's story"),
+                    React.createElement(Row, { label: "Who", value: idea.who }),
+                    React.createElement(Row, { label: "What", value: idea.what }),
+                    React.createElement(Row, { label: "Where", value: idea.where }),
+                    React.createElement(Row, { label: "When", value: idea.when }),
+                    React.createElement(Row, { label: "How", value: idea.how }),
+                    React.createElement(Row, { label: "Why", value: idea.why }))),
+                React.createElement(Row, { label: "Feelings", value: idea.feelings }),
+                React.createElement(Row, { label: "Quotes", value: idea.quotes }),
+                React.createElement(Row, { label: "Wisdom / lessons", value: idea.wisdom }),
+                React.createElement(Row, { label: "Metaphorical", value: idea.metaphorical }),
+                React.createElement(Row, { label: "Solutions", value: idea.solutions }),
+                (idea.topics && idea.topics.length > 0) && (React.createElement("div", { className: "phc-view-row" },
+                    React.createElement("div", { className: "phc-view-label" }, "Topics / themes"),
+                    React.createElement("div", { className: "phc-view-value" },
+                        React.createElement("div", { className: "phc-card-topics" }, idea.topics.map(t => React.createElement("span", { key: t, className: "phc-tag" }, t)))))),
+                React.createElement(Row, { label: "Relationships", value: idea.relationships }),
+                React.createElement(Row, { label: "Related", value: idea.related }),
+                (idea.images && idea.images.length > 0) && (React.createElement("div", { className: "phc-view-row" },
+                    React.createElement("div", { className: "phc-view-label" },
+                        React.createElement(Icon, { name: "image", size: 14 }),
+                        " Images"),
+                    React.createElement("div", { className: "phc-media-grid" }, idea.images.map((img, i) => React.createElement("img", { key: i, src: mediaUrls[img.path] || "", alt: img.name, className: "phc-thumb" }))))),
+                (idea.audio && idea.audio.length > 0) && (React.createElement("div", { className: "phc-view-row" },
+                    React.createElement("div", { className: "phc-view-label" },
+                        React.createElement(Icon, { name: "music", size: 14 }),
+                        " Audio"),
+                    React.createElement("div", { className: "phc-audio-list" }, idea.audio.map((a, i) => (React.createElement("div", { key: i },
+                        React.createElement("div", { className: "phc-audio-name" }, a.name),
+                        mediaUrls[a.path] && React.createElement("audio", { controls: true, src: mediaUrls[a.path] }))))))),
+                (idea.noteLinks && idea.noteLinks.length > 0) && (React.createElement("div", { className: "phc-view-row" },
+                    React.createElement("div", { className: "phc-view-label" },
+                        React.createElement(Icon, { name: "link", size: 14 }),
+                        " Notes / recordings"),
+                    React.createElement("div", { className: "phc-view-value" }, idea.noteLinks.map((n, i) => (React.createElement("div", { key: i },
+                        React.createElement("a", { href: n.url, target: "_blank", rel: "noreferrer" }, n.label || n.url))))))),
+                React.createElement(Row, { label: "References / sources", value: idea.references }),
+                React.createElement(Row, { label: "Suggestions", value: idea.suggestions }),
+                React.createElement("div", { className: "phc-view-row" },
+                    React.createElement("div", { className: "phc-view-label" },
+                        React.createElement("button", { className: "phc-chip", onClick: () => setShowPrivate(!showPrivate) },
+                            React.createElement(Icon, { name: showPrivate ? "unlock" : "lock", size: 14 }),
+                            " Planning notes (private)")),
+                    showPrivate && React.createElement("div", { className: "phc-view-value phc-private" }, idea.planningNotes || "Nothing written yet."))),
+            React.createElement("div", { className: "phc-modal-foot" },
+                React.createElement("button", { className: "phc-btn", onClick: onClose }, "Close"),
+                React.createElement("button", { className: "phc-btn phc-btn-primary", onClick: onEdit },
+                    React.createElement(Icon, { name: "pencil", size: 15 }),
+                    " Edit")))));
+}
+function EditModal({ idea, customLists, addCustomOption, onCancel, onSave }) {
+    const [draft, setDraft] = useState({ ...idea });
+    const [topicInput, setTopicInput] = useState("");
+    const [linkLabel, setLinkLabel] = useState("");
+    const [linkUrl, setLinkUrl] = useState("");
+    const [mediaUrls, setMediaUrls] = useState({});
+    const [uploading, setUploading] = useState(false);
+    useEffect(() => {
+        let cancelled = false;
+        getSignedUrls([...(draft.images || []), ...(draft.audio || [])]).then((map) => {
+            if (!cancelled)
+                setMediaUrls((prev) => ({ ...prev, ...map }));
+        });
+        return () => { cancelled = true; };
+    }, [draft.images, draft.audio]);
+    const set = (field) => (e) => setDraft((d) => ({ ...d, [field]: e.target.value }));
+    const addTopic = () => {
+        const t = topicInput.trim();
+        if (t && !draft.topics.includes(t))
+            setDraft(d => ({ ...d, topics: [...d.topics, t] }));
+        setTopicInput("");
+    };
+    const removeTopic = (t) => setDraft(d => ({ ...d, topics: d.topics.filter(x => x !== t) }));
+    const addLink = () => {
+        if (!linkUrl.trim())
+            return;
+        setDraft(d => ({ ...d, noteLinks: [...d.noteLinks, { label: linkLabel.trim() || "Link", url: linkUrl.trim() }] }));
+        setLinkLabel("");
+        setLinkUrl("");
+    };
+    const removeLink = (i) => setDraft(d => ({ ...d, noteLinks: d.noteLinks.filter((_, idx) => idx !== i) }));
+    const onImages = async (e) => {
+        const files = Array.from(e.target.files || []);
+        e.target.value = "";
+        if (!files.length)
+            return;
+        setUploading(true);
+        try {
+            const items = await Promise.all(files.map((f) => uploadMediaFile(f, draft.id)));
+            setDraft(d => ({ ...d, images: [...d.images, ...items] }));
+        }
+        catch (err) {
+            alert("Couldn't upload image(s): " + err.message);
+        }
+        setUploading(false);
+    };
+    const onAudio = async (e) => {
+        const files = Array.from(e.target.files || []);
+        e.target.value = "";
+        if (!files.length)
+            return;
+        setUploading(true);
+        try {
+            const items = await Promise.all(files.map((f) => uploadMediaFile(f, draft.id)));
+            setDraft(d => ({ ...d, audio: [...d.audio, ...items] }));
+        }
+        catch (err) {
+            alert("Couldn't upload audio: " + err.message);
+        }
+        setUploading(false);
+    };
+    const removeImage = (i) => {
+        removeMediaFile((draft.images[i] || {}).path);
+        setDraft(d => ({ ...d, images: d.images.filter((_, idx) => idx !== i) }));
+    };
+    const removeAudio = (i) => {
+        removeMediaFile((draft.audio[i] || {}).path);
+        setDraft(d => ({ ...d, audio: d.audio.filter((_, idx) => idx !== i) }));
+    };
+    return (React.createElement("div", { className: "phc-overlay", onClick: onCancel },
+        React.createElement("div", { className: "phc-modal", onClick: (e) => e.stopPropagation() },
+            React.createElement("div", { className: "phc-modal-head" },
+                React.createElement("h2", null, idea.title ? "Edit idea" : "New idea"),
+                React.createElement("button", { className: "phc-icon-btn", onClick: onCancel },
+                    React.createElement(Icon, { name: "x", size: 18 }))),
+            React.createElement("div", { className: "phc-modal-body" },
+                React.createElement(Section, { title: "Basics" },
+                    React.createElement("div", { className: "pf-row" },
+                        React.createElement("div", { className: "pf-emoji-pick" },
+                            React.createElement("label", { className: "pf-label" }, "Emoji"),
+                            React.createElement("input", { className: "pf-input pf-emoji-input", value: draft.emoji, maxLength: 4, onChange: set("emoji"), placeholder: "\u2728" }),
+                            React.createElement("div", { className: "pf-emoji-row" }, EMOJI_PRESET.map(em => (React.createElement("button", { type: "button", key: em, className: "pf-emoji-opt", onClick: () => setDraft(d => ({ ...d, emoji: em })) }, em))))),
+                        React.createElement("div", { style: { flex: 1 } },
+                            React.createElement("label", { className: "pf-label" }, "Title"),
+                            React.createElement("input", { className: "pf-input", value: draft.title, onChange: set("title"), placeholder: "Name this idea..." }))),
+                    React.createElement("div", { className: "pf-row" },
+                        React.createElement(ComboField, { label: "Type", value: draft.type, options: customLists.type, onChange: (v) => setDraft(d => ({ ...d, type: v })), onAddOption: (v) => addCustomOption("type", v) }),
+                        React.createElement("div", null,
+                            React.createElement("label", { className: "pf-label" }, "Kind (optional)"),
+                            React.createElement("input", { className: "pf-input", value: draft.kind, onChange: set("kind") }))),
+                    React.createElement("div", { className: "pf-row" },
+                        React.createElement(ComboField, { label: "Level", value: draft.level, options: customLists.level, onChange: (v) => setDraft(d => ({ ...d, level: v })), onAddOption: (v) => addCustomOption("level", v) }),
+                        React.createElement("div", null,
+                            React.createElement("label", { className: "pf-label" }, "Status"),
+                            React.createElement("select", { className: "pf-input", value: draft.status, onChange: set("status") }, STATUS_OPTIONS.map(s => React.createElement("option", { key: s.value, value: s.value }, s.label))))),
+                    React.createElement("div", { className: "pf-row" },
+                        React.createElement(ComboField, { label: "Comfort level", value: draft.comfort, options: customLists.comfort, onChange: (v) => setDraft(d => ({ ...d, comfort: v })), onAddOption: (v) => addCustomOption("comfort", v) }),
+                        React.createElement(ComboField, { label: "Need", value: draft.need, options: customLists.need, onChange: (v) => setDraft(d => ({ ...d, need: v })), onAddOption: (v) => addCustomOption("need", v) })),
+                    React.createElement("label", { className: "pf-favorite" },
+                        React.createElement("input", { type: "checkbox", checked: draft.favorite, onChange: (e) => setDraft(d => ({ ...d, favorite: e.target.checked })) }),
+                        React.createElement(Icon, { name: "star", size: 15 }),
+                        " Mark as favorite")),
+                React.createElement(Section, { title: "Who's story", defaultOpen: false },
+                    React.createElement("div", { className: "pf-grid-2" },
+                        React.createElement("div", null,
+                            React.createElement("label", { className: "pf-label" }, "Who"),
+                            React.createElement("input", { className: "pf-input", value: draft.who, onChange: set("who") })),
+                        React.createElement("div", null,
+                            React.createElement("label", { className: "pf-label" }, "What"),
+                            React.createElement("input", { className: "pf-input", value: draft.what, onChange: set("what") })),
+                        React.createElement("div", null,
+                            React.createElement("label", { className: "pf-label" }, "Where"),
+                            React.createElement("input", { className: "pf-input", value: draft.where, onChange: set("where") })),
+                        React.createElement("div", null,
+                            React.createElement("label", { className: "pf-label" }, "When"),
+                            React.createElement("input", { className: "pf-input", value: draft.when, onChange: set("when") })),
+                        React.createElement("div", null,
+                            React.createElement("label", { className: "pf-label" }, "How"),
+                            React.createElement("input", { className: "pf-input", value: draft.how, onChange: set("how") })),
+                        React.createElement("div", null,
+                            React.createElement("label", { className: "pf-label" }, "Why"),
+                            React.createElement("input", { className: "pf-input", value: draft.why, onChange: set("why") })))),
+                React.createElement(Section, { title: "Reflections", defaultOpen: false },
+                    React.createElement("label", { className: "pf-label" }, "Feelings"),
+                    React.createElement("textarea", { className: "pf-textarea", value: draft.feelings, onChange: set("feelings") }),
+                    React.createElement("label", { className: "pf-label" }, "Quotes"),
+                    React.createElement("textarea", { className: "pf-textarea", value: draft.quotes, onChange: set("quotes") }),
+                    React.createElement("label", { className: "pf-label" }, "Wisdom / lessons"),
+                    React.createElement("textarea", { className: "pf-textarea", value: draft.wisdom, onChange: set("wisdom") }),
+                    React.createElement("label", { className: "pf-label" }, "Metaphorical"),
+                    React.createElement("textarea", { className: "pf-textarea", value: draft.metaphorical, onChange: set("metaphorical") }),
+                    React.createElement("label", { className: "pf-label" }, "Solutions"),
+                    React.createElement("textarea", { className: "pf-textarea", value: draft.solutions, onChange: set("solutions") })),
+                React.createElement(Section, { title: "Connections", defaultOpen: false },
+                    React.createElement("label", { className: "pf-label" }, "Topics / themes"),
+                    React.createElement("div", { className: "pf-combo" },
+                        React.createElement("input", { className: "pf-input", value: topicInput, onChange: (e) => setTopicInput(e.target.value), placeholder: "Add a topic...", onKeyDown: (e) => e.key === "Enter" && (e.preventDefault(), addTopic()) }),
+                        React.createElement("button", { type: "button", className: "pf-addbtn", onClick: addTopic },
+                            React.createElement(Icon, { name: "plus", size: 14 }))),
+                    React.createElement("div", { className: "phc-card-topics", style: { marginTop: 8 } }, draft.topics.map(t => (React.createElement("span", { key: t, className: "phc-tag phc-tag-removable", onClick: () => removeTopic(t) },
+                        t,
+                        " ",
+                        React.createElement(Icon, { name: "x", size: 11 }))))),
+                    React.createElement("label", { className: "pf-label" }, "Relationships"),
+                    React.createElement("textarea", { className: "pf-textarea", value: draft.relationships, onChange: set("relationships") }),
+                    React.createElement("label", { className: "pf-label" }, "Related"),
+                    React.createElement("textarea", { className: "pf-textarea", value: draft.related, onChange: set("related") }),
+                    React.createElement("label", { className: "pf-label" }, "Edition"),
+                    React.createElement("input", { className: "pf-input", value: draft.edition, onChange: set("edition") })),
+                React.createElement(Section, { title: "Media", defaultOpen: false },
+                    React.createElement("label", { className: "pf-label" },
+                        React.createElement(Icon, { name: "image", size: 14 }),
+                        " Images"),
+                    React.createElement("input", { type: "file", accept: "image/*", multiple: true, onChange: onImages, className: "pf-file", disabled: uploading }),
+                    uploading && React.createElement("div", { className: "phc-audio-name" }, "Uploading..."),
+                    React.createElement("div", { className: "phc-media-grid" }, draft.images.map((img, i) => (React.createElement("div", { key: i, className: "phc-thumb-wrap" },
+                        React.createElement("img", { src: mediaUrls[img.path] || "", alt: img.name, className: "phc-thumb" }),
+                        React.createElement("button", { type: "button", className: "phc-thumb-x", onClick: () => removeImage(i) },
+                            React.createElement(Icon, { name: "x", size: 12 })))))),
+                    React.createElement("label", { className: "pf-label" },
+                        React.createElement(Icon, { name: "music", size: 14 }),
+                        " Audio"),
+                    React.createElement("input", { type: "file", accept: "audio/*", multiple: true, onChange: onAudio, className: "pf-file", disabled: uploading }),
+                    React.createElement("div", { className: "phc-audio-list" }, draft.audio.map((a, i) => (React.createElement("div", { key: i, className: "phc-audio-row" },
+                        React.createElement("span", { className: "phc-audio-name" }, a.name),
+                        mediaUrls[a.path] && React.createElement("audio", { controls: true, src: mediaUrls[a.path], style: { height: 30 } }),
+                        React.createElement("button", { type: "button", className: "phc-chip", onClick: () => removeAudio(i) },
+                            React.createElement(Icon, { name: "x", size: 12 })))))),
+                    React.createElement("label", { className: "pf-label" },
+                        React.createElement(Icon, { name: "link", size: 14 }),
+                        " Note / recording link"),
+                    React.createElement("div", { className: "pf-row" },
+                        React.createElement("input", { className: "pf-input", placeholder: "Label", value: linkLabel, onChange: (e) => setLinkLabel(e.target.value) }),
+                        React.createElement("input", { className: "pf-input", placeholder: "https://...", value: linkUrl, onChange: (e) => setLinkUrl(e.target.value) }),
+                        React.createElement("button", { type: "button", className: "pf-addbtn", onClick: addLink },
+                            React.createElement(Icon, { name: "plus", size: 14 }))),
+                    draft.noteLinks.map((n, i) => (React.createElement("div", { key: i, className: "phc-audio-row" },
+                        React.createElement("span", { className: "phc-audio-name" },
+                            n.label,
+                            ": ",
+                            n.url),
+                        React.createElement("button", { type: "button", className: "phc-chip", onClick: () => removeLink(i) },
+                            React.createElement(Icon, { name: "x", size: 12 })))))),
+                React.createElement(Section, { title: "Sources", defaultOpen: false },
+                    React.createElement("label", { className: "pf-label" }, "References / sources"),
+                    React.createElement("textarea", { className: "pf-textarea", value: draft.references, onChange: set("references") }),
+                    React.createElement("label", { className: "pf-label" }, "Suggestions"),
+                    React.createElement("textarea", { className: "pf-textarea", value: draft.suggestions, onChange: set("suggestions") })),
+                React.createElement(Section, { title: "Planning notes (private)", defaultOpen: false },
+                    React.createElement("textarea", { className: "pf-textarea", value: draft.planningNotes, onChange: set("planningNotes"), placeholder: "Only visible to you when you choose to reveal it..." }))),
+            React.createElement("div", { className: "phc-modal-foot" },
+                React.createElement("button", { className: "phc-btn", onClick: onCancel }, "Cancel"),
+                React.createElement("button", { className: "phc-btn phc-btn-primary", onClick: () => onSave(draft) },
+                    React.createElement(Icon, { name: "save", size: 15 }),
+                    " Save")))));
+}
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(PinkHangingChair, null));
+
+
+
+</script>
+</body>
+</html>
