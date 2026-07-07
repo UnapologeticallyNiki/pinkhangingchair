@@ -36,7 +36,7 @@ const phcWorkshopConfig = {
         { value: 'missing-something', label: 'Missing Something' },
       ] },
     { key: 'comfort', label: 'Comfort level', type: 'combo', options: () => (window.__phcCustomLists?.comfort || []) },
-    { key: 'need', label: 'Need', type: 'combo', options: () => (window.__phcCustomLists?.need || []) },
+    { key: 'need', label: 'Need', type: 'chips', placeholder: 'Add a need…' },
     { key: 'favorite', label: '⭐ Mark as favorite', type: 'boolean' },
 
     { key: 'who', label: 'Who', type: 'text' },
@@ -47,14 +47,14 @@ const phcWorkshopConfig = {
     { key: 'why', label: 'Why', type: 'text' },
 
     { key: 'feelings', label: 'Feelings', type: 'textarea' },
-    { key: 'quotes', label: 'Quotes', type: 'textarea' },
-    { key: 'wisdom', label: 'Wisdom / lessons', type: 'textarea' },
-    { key: 'metaphorical', label: 'Metaphorical', type: 'textarea' },
-    { key: 'solutions', label: 'Solutions', type: 'textarea' },
+    { key: 'quotes', label: 'Quotes', type: 'chips', placeholder: 'Add a quote…' },
+    { key: 'wisdom', label: 'Wisdom / lessons', type: 'chips', placeholder: 'Add a lesson…' },
+    { key: 'metaphorical', label: 'Metaphorical', type: 'chips', placeholder: 'Add a metaphor…' },
+    { key: 'solutions', label: 'Solutions', type: 'chips', placeholder: 'Add a solution…' },
 
     { key: 'topics', label: 'Topics / themes', type: 'tagselect', presetOptions: [] },
-    { key: 'relationships', label: 'Relationships', type: 'textarea' },
-    { key: 'related', label: 'Related', type: 'textarea' },
+    { key: 'relationships', label: 'Relationships', type: 'chips', placeholder: 'Add a relationship…' },
+    { key: 'related', label: 'Related', type: 'chips', placeholder: 'Add something related…' },
     { key: 'edition', label: 'Edition', type: 'text' },
 
     { key: 'images', label: 'Images', type: 'files', as: 'image', accept: 'image/*' },
@@ -66,14 +66,14 @@ const phcWorkshopConfig = {
     { key: 'planning_notes', label: 'Planning notes (private)', type: 'textarea', placeholder: 'Only visible to you when you choose to reveal it…' },
   ],
 
-  // "Save" button on a combo field (Type/Level/Comfort/Need) — persists
+  // "Save" button on a combo field (Type/Level/Comfort) — persists
   // the new option to the phc_lists table, same as the old ComboField did.
   onAddOption: async (field, val) => {
     const lists = window.__phcCustomLists || {};
     if ((lists[field] || []).includes(val)) return;
     const updated = { ...lists, [field]: [...(lists[field] || []), val] };
     window.__phcCustomLists = updated;
-    const column = { type: 'type_options', level: 'level_options', comfort: 'comfort_options', need: 'need_options' }[field];
+    const column = { type: 'type_options', level: 'level_options', comfort: 'comfort_options' }[field];
     if (column) await sb.from('phc_lists').update({ [column]: updated[field] }).eq('id', 1);
   },
 
