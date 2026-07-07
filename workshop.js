@@ -47,6 +47,8 @@ function createWorkshop(config) {
 
   let state = {};
   let editingId = null;
+  let renderToken = 0;   // bumped every render() — lets stale async work detect it's obsolete
+  let saving = false;    // guards against double-click / double-submit
 
   // ---------- id generation (slug / uuid strategies only) ----------
   function slugify(str) {
@@ -85,6 +87,27 @@ function createWorkshop(config) {
     return '';
   }
 
+  // ---------- built-in toast (self-contained — no host CSS required) ----------
+  let toastTimer;
+  function ensureToastEl() {
+    let t = document.getElementById(`${containerId}-toast`);
+    if (!t) {
+      t = document.createElement('div');
+      t.id = `${containerId}-toast`;
+      t.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#222;color:#fff;font-weight:600;padding:10px 20px;border-radius:30px;font-size:13px;z-index:10000;opacity:0;transition:opacity 0.2s;pointer-events:none;white-space:nowrap;';
+      document.body.appendChild(t);
+    }
+    return t;
+  }
+  function notify(msg) {
+    const t = ensureToastEl();
+    t.textContent = msg;
+    t.style.opacity = '1';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.style.opacity = '0'; }, 2200);
+    onToast(msg); // still let the host app react too, if it wants to (e.g. its own status line)
+  }
+
   function esc(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -104,12 +127,17 @@ function createWorkshop(config) {
       }
     });
     render();
-    document.getElementById(containerId + '-overlay').classList.add('open');
+    const ov = document.getElementById(containerId + '-overlay');
+    ov.classList.add('open');
+    ov.style.display = 'flex';
   }
 
   function close() {
     const ov = document.getElementById(containerId + '-overlay');
-    if (ov) ov.classList.remove('open');
+    if (ov) {
+      ov.classList.remove('open');
+      ov.style.display = 'none';
+    }
   }
 
   // ---------- field rendering ----------
@@ -196,17 +224,18 @@ function createWorkshop(config) {
   }
 
   function render() {
+    renderToken++;
     const el = ensureContainer();
     el.innerHTML = `
-      <div class="modal-overlay" id="${containerId}-overlay">
-        <div class="modal">
-          <div class="modal-title">
+      <div class="modal-overlay" id="${containerId}-overlay" style="position:fixed;inset:0;display:none;padding:20px;z-index:9999;">
+        <div class="modal" style="max-width:620px;width:100%;max-height:88vh;overflow-y:auto;box-sizing:border-box;">
+          <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
             <span>${editingId ? '✏️ Edit — ' + esc(state[idSourceField]) : '✨ New ' + esc(title)}</span>
-            <button type="button" class="modal-close" id="${containerId}-close">×</button>
+            <button type="button" class="modal-close" id="${containerId}-close" style="cursor:pointer;line-height:1;">×</button>
           </div>
           ${fields.map(fieldHTML).join('')}
-          <button type="button" class="btn-primary" id="${containerId}-save">Save</button>
-          <button type="button" class="btn-ghost" id="${containerId}-cancel">Cancel</button>
+          <button type="button" class="btn-primary" id="${containerId}-save" style="cursor:pointer;">Save</button>
+          <button type="button" class="btn-ghost" id="${containerId}-cancel" style="cursor:pointer;">Cancel</button>
         </div>
       </div>`;
     wireEvents();
@@ -282,19 +311,22 @@ function createWorkshop(config) {
       if (f.type === 'files') {
         renderFileList(f);
         document.getElementById(id).onchange = async (e) => {
+          const token = renderToken;
           const files = Array.from(e.target.files || []);
           if (!files.length) return;
           const statusEl = document.getElementById(id + '_status');
-          if (!storageAdapter) { onToast('⚠️ No storage adapter configured'); return; }
+          if (!storageAdapter) { notify('⚠️ No storage adapter configured'); return; }
           statusEl.textContent = 'Uploading…';
           for (const file of files) {
             try {
               const item = await storageAdapter.upload(file, { recordId: editingId });
+              if (token !== renderToken) return; // a different record is open now — drop this upload
               state[f.key].push(item);
             } catch (err) {
-              onToast('⚠️ Upload failed: ' + err.message);
+              notify('⚠️ Upload failed: ' + err.message);
             }
           }
+          if (token !== renderToken) return;
           statusEl.textContent = '';
           e.target.value = '';
           renderFileList(f);
@@ -366,6 +398,7 @@ function createWorkshop(config) {
   }
 
   function renderFileList(f) {
+    const token = renderToken;
     const list = document.getElementById(`wk_${f.key}_list`);
     const items = state[f.key] || [];
     list.innerHTML = items.map((item, i) => `
@@ -392,6 +425,7 @@ function createWorkshop(config) {
         if (!item.path) return;
         try {
           const url = await storageAdapter.getUrl(item.path);
+          if (token !== renderToken) return; // a different record's modal is open now — don't touch its DOM
           const el = document.getElementById(`wk_${f.key}_${i}_preview`);
           if (!el || !url) return;
           if (f.as === 'audio') {
@@ -420,47 +454,59 @@ function createWorkshop(config) {
 
   // ---------- save / delete ----------
   async function save() {
-    readFieldValues();
+    if (saving) return; // a click already in flight — ignore repeats
+    saving = true;
+    const saveBtn = document.getElementById(`${containerId}-save`);
+    if (saveBtn) saveBtn.disabled = true;
 
-    for (const f of fields.filter(f => f.required)) {
-      const v = state[f.key];
-      if (!v || (Array.isArray(v) && !v.length)) {
-        onToast(`${f.label} is required`);
+    try {
+      readFieldValues();
+
+      for (const f of fields.filter(f => f.required)) {
+        const v = state[f.key];
+        if (!v || (Array.isArray(v) && !v.length)) {
+          notify(`${f.label} is required`);
+          return;
+        }
+      }
+
+      const record = { ...state };
+
+      if (idStrategy === 'db') {
+        if (editingId) {
+          record[idColumn] = editingId;
+          const { data, error } = await supabase.from(table).update(record).eq(idColumn, editingId).select().single();
+          if (error) { notify('⚠️ Save failed: ' + error.message); return; }
+          close(); onSaved(data, false); notify('Saved ✓');
+        } else {
+          const { data, error } = await supabase.from(table).insert(record).select().single();
+          if (error) { notify('⚠️ Save failed: ' + error.message); return; }
+          editingId = data[idColumn]; // a repeat click now updates instead of inserting a duplicate
+          close(); onSaved(data, true); notify('Added 🎉');
+        }
         return;
       }
+
+      // slug / uuid strategies — unchanged from v1
+      record[idColumn] = editingId || genId(state[idSourceField]);
+      const { error } = await supabase.from(table).upsert(record);
+      if (error) { notify('⚠️ Save failed: ' + error.message); return; }
+      const wasNew = !editingId;
+      editingId = record[idColumn];
+      close();
+      onSaved(record, wasNew);
+      notify(wasNew ? 'Added 🎉' : 'Saved ✓');
+    } finally {
+      saving = false;
+      if (saveBtn) saveBtn.disabled = false;
     }
-
-    const record = { ...state };
-
-    if (idStrategy === 'db') {
-      if (editingId) {
-        record[idColumn] = editingId;
-        const { data, error } = await supabase.from(table).update(record).eq(idColumn, editingId).select().single();
-        if (error) { onToast('⚠️ Save failed: ' + error.message); return; }
-        close(); onSaved(data, false); onToast('Saved ✓');
-      } else {
-        const { data, error } = await supabase.from(table).insert(record).select().single();
-        if (error) { onToast('⚠️ Save failed: ' + error.message); return; }
-        close(); onSaved(data, true); onToast('Added 🎉');
-      }
-      return;
-    }
-
-    // slug / uuid strategies — unchanged from v1
-    record[idColumn] = editingId || genId(state[idSourceField]);
-    const { error } = await supabase.from(table).upsert(record);
-    if (error) { onToast('⚠️ Save failed: ' + error.message); return; }
-    const wasNew = !editingId;
-    close();
-    onSaved(record, wasNew);
-    onToast(wasNew ? 'Added 🎉' : 'Saved ✓');
   }
 
   async function remove(id) {
     const { error } = await supabase.from(table).delete().eq(idColumn, id);
-    if (error) { onToast('⚠️ Delete failed: ' + error.message); return; }
+    if (error) { notify('⚠️ Delete failed: ' + error.message); return; }
     onDeleted(id);
-    onToast('Removed');
+    notify('Removed');
   }
 
   return { open, close, remove };
