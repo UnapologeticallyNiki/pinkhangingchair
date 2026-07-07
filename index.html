@@ -159,20 +159,6 @@ body { margin: 0; }
 .phc-login-card .phc-btn-primary { width: 100%; justify-content: center; }
 .phc-logout-link { position: absolute; top: 14px; right: 18px; background: none; border: none; color: #8a5566; font-size: 12.5px; cursor: pointer; text-decoration: underline; font-family: inherit; }
 .phc-loading { min-height: 100vh; display: flex; align-items: center; justify-content: center; color: #8a5566; font-family: 'Nunito Sans', sans-serif; }
-/* ================================================================
-   WORKSHOP STYLING FOR PHC
-   Paste this whole block into PHC's existing <style>...</style>,
-   anywhere after the closing brace of .phc-loading (i.e. right
-   before </style>).
-
-   Colors are hardcoded (not var(--rose) etc.) on purpose: Workshop's
-   modal is appended to document.body, as a SIBLING of the <div
-   id="root"> that React renders into — not a descendant of the
-   .phc-root div where your CSS custom properties are scoped. CSS
-   variables only cascade down the DOM tree, so var(--rose) wouldn't
-   resolve out there. Hardcoding the same hex values sidesteps that
-   entirely.
-   ================================================================ */
 
 .modal-overlay {
   position: fixed; inset: 0;
