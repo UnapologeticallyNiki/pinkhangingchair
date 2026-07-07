@@ -567,6 +567,12 @@ function PinkHangingChair() {
     const [showPrivate, setShowPrivate] = useState(false);
     const jsonInputRef = useRef(null);
     const csvInputRef = useRef(null);
+    useEffect(() => { window.__phcIdeas = ideas; }, [ideas]);
+useEffect(() => { window.__phcCustomLists = customLists; }, [customLists]);
+useEffect(() => {
+  window.__phcSetIdeas = setIdeas;
+  window.__phcFlash = flashStatus;
+}, []);
     useEffect(() => {
         sb.auth.getSession().then(({ data }) => setSession(data.session));
         const { data: sub } = sb.auth.onAuthStateChange((_event, sess) => setSession(sess));
@@ -766,7 +772,7 @@ function PinkHangingChair() {
                 React.createElement("button", { className: "phc-btn", onClick: () => setSortAsc(!sortAsc), title: "Sort A\u2013Z / Z\u2013A" },
                     React.createElement(Icon, { name: sortAsc ? "sortDown" : "sortUp", size: 16 }),
                     " Sort"),
-                React.createElement("button", { className: "phc-btn phc-btn-primary", onClick: () => setEditingIdea(blankIdea()) },
+                React.createElement("button", { className: "phc-btn phc-btn-primary", onClick: () => PhcWorkshop.open(null) },
                     React.createElement(Icon, { name: "plus", size: 16 }),
                     " Plant Idea"))),
         React.createElement("div", { className: "phc-filters" }, FILTER_BOXES.map((f) => (React.createElement("button", { key: f.value, className: "phc-filter" + (filter === f.value ? " active" : ""), onClick: () => setFilter(f.value) }, f.label)))),
@@ -811,11 +817,10 @@ function PinkHangingChair() {
                 React.createElement("div", { className: "phc-card-actions" },
                     React.createElement("button", { onClick: () => setViewingId(idea.id), title: "View" },
                         React.createElement(Icon, { name: "eye", size: 16 })),
-                    React.createElement("button", { onClick: () => setEditingIdea(idea), title: "Edit" },
-                        React.createElement(Icon, { name: "pencil", size: 16 })),
+React.createElement("button", { onClick: () => PhcWorkshop.open({ id: idea.id, ...ideaToRow(idea) }), title: "Edit" },                        React.createElement(Icon, { name: "pencil", size: 16 })),
                     React.createElement("button", { onClick: () => deleteIdea(idea.id), title: "Delete", className: "phc-danger" },
                         React.createElement(Icon, { name: "trash", size: 16 }))))))),
-        viewingIdea && (React.createElement(ViewModal, { idea: viewingIdea, onClose: () => { setViewingId(null); setShowPrivate(false); }, onEdit: () => { setEditingIdea(viewingIdea); setViewingId(null); }, showPrivate: showPrivate, setShowPrivate: setShowPrivate })),
+        viewingIdea && (React.createElement(ViewModal, { idea: viewingIdea, onClose: () => { setViewingId(null); setShowPrivate(false); }, onEdit: () => { setViewingId(null); PhcWorkshop.open({ id: viewingIdea.id, ...ideaToRow(viewingIdea) }); }, showPrivate: showPrivate, setShowPrivate: setShowPrivate })),
         editingIdea && (React.createElement(EditModal, { idea: editingIdea, customLists: customLists, addCustomOption: addCustomOption, onCancel: () => setEditingIdea(null), onSave: saveIdea }))));
 }
 function ViewModal({ idea, onClose, onEdit, showPrivate, setShowPrivate }) {
@@ -1099,5 +1104,8 @@ function EditModal({ idea, customLists, addCustomOption, onCancel, onSave }) {
 ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(PinkHangingChair, null));
 
 </script>
+<script src="workshop.js"></script>
+<script src="phc-storage-adapter.js"></script>
+<script src="phc-workshop.config.js"></script>
 </body>
 </html>
